@@ -1,6 +1,7 @@
 package ethereum
 
 import (
+	"encoding/hex"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -37,7 +38,7 @@ func ImportWalletByMnemonics(mnemonics string) string{
 }
 
 //Import Wallet By Keystore  //wjq 增加去重判断:keystore.Find()
-func (ks *KeyStore)ImportWalletByKeystore(password string, keyjson []byte) (error ,string){
+func (ks *KeyStore) ImportWalletByKeystore(password string, keyjson []byte) (error ,string){
 
 	// Import back the account we've exported (and then deleted) above with yet
 	// again a fresh passphrase
@@ -49,16 +50,14 @@ func (ks *KeyStore)ImportWalletByKeystore(password string, keyjson []byte) (erro
 }
 
 //Import PrivateKey, Save as keystore  //wjq 已有去重判断
-func ImportWalletByPrivateKey(keystoreDir,password, privateKey string ) (error ,string){
-
-	ks := keystore.NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
+func (ks *KeyStore) ImportWalletByPrivateKey(password, privateKey string ) (error ,string){
 
 	privKey, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
 		return err, ""
 	}
 
-	newAccount,err := ks.ImportECDSA(privKey,password)
+	newAccount,err := ks.keystore.ImportECDSA(privKey,password)
 	if err != nil {
 		return err, ""
 	}
@@ -66,49 +65,86 @@ func ImportWalletByPrivateKey(keystoreDir,password, privateKey string ) (error ,
 }
 
 //Export keystore by Mnemonics
-func ExportkeystoreByMnemonics(){
+func (ks *KeyStore) ExportkeystoreByMnemonics(){
 
 }
 
 //Export keystore by keystore
-func ExportKeystore(keystoreDir,address, password string )([]byte,error) {
+func (ks *KeyStore) ExportKeystore(address, password string )(string,error) {
 
-	ks := keystore.NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
-	account, err := utils.MakeAddress(ks, address)
+	account, err := utils.MakeAddress(ks.keystore, address)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// Export the newly created account with a different passphrase. The returned
 	// data from this method invocation is a JSON encoded, encrypted key-file
-	keyJson,err := ks.Export(account,password,password)
+	keyJson,err := ks.keystore.Export(account,password,password)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return keyJson,nil
+	return string(keyJson),nil
 }
 
 //Export PrivateKey by Mnemonics
-func ExportPrivateKeyByMnemonics(){
+func (ks *KeyStore) ExportPrivateKeyByMnemonics(){
 
 }
 
 //Export PrivateKey by keystore
-func ExportPrivateKeyByKeystore(keystoreDir,address, password string )([]byte,error) {
+func (ks *KeyStore) ExportPrivateKeyByKeystore(address, password string )(string,error) {
 
-	keyJson , err := ExportKeystore(keystoreDir,address,password)
+	keyJson , err := ks.ExportKeystore(address,password)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	key, err := keystore.DecryptKey(keyJson, password)
+	key, err := keystore.DecryptKey([]byte(keyJson), password)
 	//seckey := math.PaddedBigBytes(key.PrivateKey.D, key.PrivateKey.Params().BitSize/8)
 	//fmt.Println("seckey="+ hex.EncodeToString(seckey))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	privateKey := crypto.FromECDSA(key.PrivateKey)
 
-	return privateKey, nil
+	return hex.EncodeToString(privateKey), nil
+}
+
+//Delete  Mnemonics
+func DeleteMnemonics(){
+
+}
+
+//Delete Keystore By Address
+func (ks *KeyStore) DeleteKeystoreByAddress(address, password string ) error {
+
+	account, err := utils.MakeAddress(ks.keystore, address)
+	if err != nil {
+		utils.Fatalf("Could not list accounts: %v", err)
+	}
+
+	// Delete the account updated above from the local keystore
+	if err := ks.keystore.Delete(account, password); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
+//Update Keystore password
+func (ks *KeyStore) UpdateKeystorePassword(address, oldpass , newpass string ) error {
+
+	account, err := utils.MakeAddress(ks.keystore, address)
+	if err != nil {
+		utils.Fatalf("Could not list accounts: %v", err)
+	}
+
+	// Update the passphrase on the account created above inside the local keystore
+	if err := ks.keystore.Update(account,oldpass,newpass); err != nil {
+		return err
+	}
+
+	return nil
 }

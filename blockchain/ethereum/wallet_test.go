@@ -1,9 +1,7 @@
 package ethereum
 
 import (
-	"encoding/hex"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
-	"github.com/ethereum/go-ethereum/cmd/utils"
 	"testing"
 )
 
@@ -41,10 +39,12 @@ func TestImportKeystore(t *testing.T) {
 //Test Import PrivateKey, Save as keystore
 func TestImportWalletByPrivateKey(t *testing.T){
 
+	ks := NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
+
 	privkey := "51979504a2a370942b621d347262e54e796592561528822f3b7a9207d45f1c98"
 	password := "12345678"
 
-	err , address := ImportWalletByPrivateKey(keystoreDir,password,privkey)
+	err , address := ks.ImportWalletByPrivateKey(password,privkey)
 	if err != nil {
 		t.Errorf("Failed to import account: %v",err)
 	}
@@ -60,15 +60,15 @@ func TestExportkeystoreByMnemonics(t *testing.T){
 //Test Export Keystore
 func TestExportKeystore(t *testing.T){
 
+	ks := NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
 	address := "822a0303b4aeeb56d02838f77b35d9b2366141ea"
 	password := "12345678"
-	keyJson , err := ExportKeystore(keystoreDir,address,password)
+	keyJson , err := ks.ExportKeystore(address,password)
 	if err != nil {
 		t.Errorf("Failed to export keystore: %v",err)
 	}
 
-	keyJsonStr := string(keyJson)
-	t.Log("keyJsonStr=",keyJsonStr)
+	t.Log("keyJson=",keyJson)
 }
 
 //Test Export PrivateKey by Mnemonics
@@ -79,75 +79,47 @@ func TestExportPrivateKeyByMnemonics(t *testing.T){
 //Test Export PrivateKey by Keystore
 func TestExportPrivateKeyByKeystore(t *testing.T){
 
+	ks := NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
 	address := "1c05cb077d2e2d28bfffb73a51cca25af22bc355"
 	password := "12345678"
-	privateKey , err := ExportPrivateKeyByKeystore(keystoreDir,address,password)
+	privateKey , err := ks.ExportPrivateKeyByKeystore(address,password)
 	if err != nil {
 		t.Errorf("Failed to export keystore: %v",err)
 	}
 
-	privateKeyStr := hex.EncodeToString(privateKey)
-	t.Log("privateKeyStr=",privateKeyStr)
+	t.Log("privateKey=",privateKey)
 }
 
-//修改keystore密码
-func TestUpdateAccount(t *testing.T){
+//Test DeleteAccountByKeystore
+func TestDeleteKeystoreByAddress(t *testing.T){
 
+	ks := NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
+	password := "12345678"
+	address := "51c9180cf26dd1e26b481cac0f555677bfe51d95"
+
+	if err := ks.DeleteKeystoreByAddress(address,password); err != nil {
+		t.Errorf("Failed DeleteAccountByKeystore: %v",err)
+	}
+
+	t.Log("TestDeleteAccountByKeystore successful")
+}
+
+//TestUpdateKeystorePassword
+func TestUpdateKeystorePassword(t *testing.T){
+
+	ks := NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
+	address := "1c05cb077d2e2d28bfffb73a51cca25af22bc355"
 	oldpass := "87654321"
 	newpass := "87654321"
 
-	ks := keystore.NewKeyStore("/Users/wujinquan/workspace/eth/", keystore.StandardScryptN, keystore.StandardScryptP)
-	account, err := utils.MakeAddress(ks, "72fca09899865d329b5a5b7f3beede2547374c52")
-	if err != nil {
-		utils.Fatalf("Could not list accounts: %v", err)
+
+	if err := ks.UpdateKeystorePassword(address,oldpass,newpass); err != nil {
+		t.Errorf("Failed to UpdateKeystorePassword: %v",err)
 	}
 
-	// Sign a transaction with multiple manually cancelled authorizations
-	if err := ks.Unlock(account, oldpass); err != nil {
-		t.Fatalf("Failed to unlock account: %v", err)
-	}
-
-	// Update the passphrase on the account created above inside the local keystore
-	if err := ks.Update(account,oldpass,newpass); err != nil {
-		t.Fatalf("Failed to update account: %v", err)
-	}
+	t.Log("TestUpdateKeystorePassword successful")
 }
 
-//删除keystore
-func TestDeleteAccount(t *testing.T){
-
-	password := "87654321"
-
-	ks := keystore.NewKeyStore("/Users/wujinquan/workspace/eth/", keystore.StandardScryptN, keystore.StandardScryptP)
-	account, err := utils.MakeAddress(ks, "72fca09899865d329b5a5b7f3beede2547374c52")
-	if err != nil {
-		utils.Fatalf("Could not list accounts: %v", err)
-	}
-
-	// Delete the account updated above from the local keystore
-	if err := ks.Delete(account, password); err != nil {
-		t.Fatalf("Failed to delete account: %v", err)
-	}
-
-}
-
-//
-func TestImportWalletByKeystore(t *testing.T){
-
-
-
-	password := "12345678"
-	ks := keystore.NewKeyStore("/Users/wujinquan/workspace/eth/", keystore.StandardScryptN, keystore.StandardScryptP)
-
-	// Create a new account to sign transactions with
-	newaccount, err := ks.NewAccount(password)
-	if err != nil {
-		t.Fatalf("Failed to create signer account: %v", err)
-	}
-
-	println("address="+newaccount.Address.Hex())
-
-}
 
 
 
