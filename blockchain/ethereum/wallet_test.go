@@ -26,9 +26,8 @@ func TestImportKeystore(t *testing.T) {
 
 	password := "12345678"
 	keyjsonStr := "{\"address\":\"ec9c88fc291ddc0e18dc321d82e29aa5454efb9d\",\"crypto\":{\"cipher\":\"aes-128-ctr\",\"ciphertext\":\"525b496910610bcc48c5488edc2a1daf19cf57f553d747fb214994fd32145096\",\"cipherparams\":{\"iv\":\"5c49b2e7f13f6afc5321a43d91ee55d0\"},\"kdf\":\"scrypt\",\"kdfparams\":{\"dklen\":32,\"n\":262144,\"p\":1,\"r\":8,\"salt\":\"783f5d34ebb98b7a06b39f65f172b5e1e11a0c126a0a8e621dabe5906de2d307\"},\"mac\":\"3fc4239a550687f4b038a5740802371be876e4bb9b68a174850220b6abb140bc\"},\"id\":\"299ff3d4-14cd-49c9-aec3-561fd8ce88a8\",\"version\":3}"
-	keyjson := []byte(keyjsonStr)
 
-	err , address := ks.ImportWalletByKeystore(password,keyjson)
+	err , address := ks.ImportKeystore(password,keyjsonStr)
 	if err != nil {
 		t.Errorf("Failed to import account: %v", err)
 	}
@@ -37,14 +36,14 @@ func TestImportKeystore(t *testing.T) {
 }
 
 //Test Import PrivateKey, Save as keystore
-func TestImportWalletByPrivateKey(t *testing.T){
+func TestImportPrivateKey(t *testing.T){
 
 	ks := NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
 
-	privkey := "51979504a2a370942b621d347262e54e796592561528822f3b7a9207d45f1c98"
-	password := "12345678"
+	privkey := "a7c0cf50fecdf99c570b987e21c9f63f3f152e5b74885e5f7a16dd3bbebe4d7b"
+	password := "87654321"
 
-	err , address := ks.ImportWalletByPrivateKey(password,privkey)
+	err , address := ks.ImportPrivateKey(password,privkey)
 	if err != nil {
 		t.Errorf("Failed to import account: %v",err)
 	}
@@ -61,7 +60,7 @@ func TestExportkeystoreByMnemonics(t *testing.T){
 func TestExportKeystore(t *testing.T){
 
 	ks := NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
-	address := "822a0303b4aeeb56d02838f77b35d9b2366141ea"
+	address := "ec9c88fc291ddc0e18dc321d82e29aa5454efb9d"
 	password := "12345678"
 	keyJson , err := ks.ExportKeystore(address,password)
 	if err != nil {
@@ -108,10 +107,9 @@ func TestDeleteKeystoreByAddress(t *testing.T){
 func TestUpdateKeystorePassword(t *testing.T){
 
 	ks := NewKeyStore(keystoreDir, keystore.StandardScryptN, keystore.StandardScryptP)
-	address := "1c05cb077d2e2d28bfffb73a51cca25af22bc355"
-	oldpass := "87654321"
-	newpass := "87654321"
-
+	address := "ec9c88fc291ddc0e18dc321d82e29aa5454efb9d"
+	oldpass := "12345678"
+	newpass := "12345678"
 
 	if err := ks.UpdateKeystorePassword(address,oldpass,newpass); err != nil {
 		t.Errorf("Failed to UpdateKeystorePassword: %v",err)

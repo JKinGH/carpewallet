@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/cmd/utils"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -38,19 +39,19 @@ func ImportWalletByMnemonics(mnemonics string) string{
 }
 
 //Import Wallet By Keystore  //wjq 增加去重判断:keystore.Find()
-func (ks *KeyStore) ImportWalletByKeystore(password string, keyjson []byte) (error ,string){
+func (ks *KeyStore) ImportKeystore(password string, keyjson string) (error ,string){
 
 	// Import back the account we've exported (and then deleted) above with yet
 	// again a fresh passphrase
-	newAccount, err := ks.keystore.Import(keyjson, password, password)
+	newAccount, err := ks.keystore.Import(common.CopyBytes([]byte(keyjson)), password, password)
 	if err != nil {
 		return err, ""
 	}
 	return nil , newAccount.Address.Hex()
 }
 
-//Import PrivateKey, Save as keystore  //wjq 已有去重判断
-func (ks *KeyStore) ImportWalletByPrivateKey(password, privateKey string ) (error ,string){
+//Import PrivateKey, Save as keystore
+func (ks *KeyStore) ImportPrivateKey(password, privateKey string ) (error ,string){
 
 	privKey, err := crypto.HexToECDSA(privateKey)
 	if err != nil {
